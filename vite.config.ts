@@ -4,6 +4,7 @@
   import path from 'path';
 
   export default defineConfig({
+    base: './',
     plugins: [react()],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
@@ -44,18 +45,77 @@
         '@radix-ui/react-collapsible@1.1.3': '@radix-ui/react-collapsible',
         '@radix-ui/react-checkbox@1.1.4': '@radix-ui/react-checkbox',
         '@radix-ui/react-avatar@1.1.3': '@radix-ui/react-avatar',
-        '@radix-ui/react-aspect-ratio@1.1.2': '@radix-ui/react-aspect-ratio',
-        '@radix-ui/react-alert-dialog@1.1.6': '@radix-ui/react-alert-dialog',
-        '@radix-ui/react-accordion@1.2.3': '@radix-ui/react-accordion',
-        '@': path.resolve(__dirname, './src'),
-      },
     },
-    build: {
-      target: 'esnext',
-      outDir: 'build',
+  },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        assetFileNames: 'assets/[name]-[hash][extname]',
+        entryFileNames: 'assets/[name]-[hash].js',
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          vendor: [
+            'vaul',
+            'sonner',
+            'recharts',
+            'react-resizable-panels',
+            'react-hook-form',
+            'react-day-picker',
+            'next-themes',
+            'lucide-react',
+            'input-otp',
+            'embla-carousel-react',
+            'cmdk',
+            'class-variance-authority',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-toggle',
+            '@radix-ui/react-toggle-group',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-slot',
+            '@radix-ui/react-slider',
+            '@radix-ui/react-separator',
+            '@radix-ui/react-select',
+            '@radix-ui/react-scroll-area',
+            '@radix-ui/react-radio-group',
+            '@radix-ui/react-progress',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-navigation-menu',
+            '@radix-ui/react-menubar',
+            '@radix-ui/react-label',
+            '@radix-ui/react-hover-card',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-context-menu',
+            '@radix-ui/react-collapsible',
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-aspect-ratio',
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-accordion',
+          ]
+        }
+      }
+    }
+  },
+  server: {
+    port: 3000,
+    strictPort: true,
+    open: true,
+    host: true,
+    fs: {
+      strict: true,
+      allow: ['..']
     },
-    server: {
-      port: 3000,
-      open: true,
-    },
-  });
+    proxy: {
+      // Add any API proxies here if needed
+    }
+  },
+  preview: {
+    port: 3000,
+    strictPort: true,
+    host: true
+  }
+});

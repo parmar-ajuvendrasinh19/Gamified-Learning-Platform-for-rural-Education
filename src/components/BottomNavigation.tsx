@@ -11,7 +11,6 @@ interface BottomNavigationProps {
 
 const studentNavItems = [
   { id: 'student-dashboard', icon: Home, label: 'Home', labelHi: 'होम' },
-  { id: 'lessons', icon: BookOpen, label: 'Lessons', labelHi: 'पाठ' },
   { id: 'quiz', icon: Trophy, label: 'Quiz', labelHi: 'प्रश्नोत्तरी' },
   { id: 'badges', icon: Award, label: 'Badges', labelHi: 'बैज' },
   { id: 'leaderboard', icon: Users, label: 'Leaderboard', labelHi: 'लीडरबोर्ड' },
@@ -20,7 +19,6 @@ const studentNavItems = [
 
 const teacherNavItems = [
   { id: 'teacher-dashboard', icon: Home, label: 'Dashboard', labelHi: 'डैशबोर्ड' },
-  { id: 'lessons', icon: BookOpen, label: 'Lessons', labelHi: 'पाठ' },
   { id: 'analytics', icon: Trophy, label: 'Analytics', labelHi: 'विश्लेषण' },
   { id: 'students', icon: Users, label: 'Students', labelHi: 'छात्र' },
   { id: 'profile', icon: Users, label: 'Profile', labelHi: 'प्रोफ़ाइल' }

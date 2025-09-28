@@ -105,7 +105,7 @@ const allBadges: Badge[] = [
   {
     id: 'explorer',
     name: 'Explorer',
-    description: 'Try all STEM simulations',
+    description: 'Try all Eklavya simulations',
     icon: '🔍',
     color: 'from-emerald-500 to-teal-500',
     unlocked: false

@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { UserRole, User } from './types';
+import { UserRole, User } from '../types';
 import { useUser } from './UserContext';
 import { LogIn, User as UserIcon, GraduationCap, Globe } from 'lucide-react';
 
@@ -18,58 +18,138 @@ interface LoginScreenProps {
 const translations = {
   en: {
     title: 'Welcome Back!',
-    subtitle: 'Login to continue your STEM journey',
-    name: 'Your Name',
-    namePlaceholder: 'Enter your name',
+    subtitle: 'Login to continue your Eklavya journey',
+    username: 'Username',
+    usernamePlaceholder: 'Enter your username',
+    password: 'Password',
+    passwordPlaceholder: 'Enter your password',
+    class: 'Class',
+    selectClass: 'Select your class',
+    class6: 'Class 6',
+    class7: 'Class 7',
+    class8: 'Class 8',
+    class9: 'Class 9',
+    class10: 'Class 10',
+    class11: 'Class 11',
+    class12: 'Class 12',
     role: 'I am a...',
     student: 'Student',
     teacher: 'Teacher',
     loginButton: 'Login',
     signupText: "Don't have an account?",
     signupLink: 'Sign up here',
-    nameRequired: 'Name is required',
+    usernameRequired: 'Username is required',
+    passwordRequired: 'Password is required',
+    classRequired: 'Please select your class',
     roleRequired: 'Please select your role'
   },
   hi: {
     title: 'वापसी पर स्वागत!',
-    subtitle: 'अपनी STEM यात्रा जारी रखने के लिए लॉगिन करें',
-    name: 'आपका नाम',
-    namePlaceholder: 'अपना नाम दर्ज करें',
+    subtitle: 'अपनी Eklavya यात्रा जारी रखने के लिए लॉगिन करें',
+    username: 'उपयोगकर्ता नाम',
+    usernamePlaceholder: 'अपना उपयोगकर्ता नाम दर्ज करें',
+    password: 'पासवर्ड',
+    passwordPlaceholder: 'अपना पासवर्ड दर्ज करें',
+    class: 'कक्षा',
+    selectClass: 'अपनी कक्षा चुनें',
+    class6: 'कक्षा 6',
+    class7: 'कक्षा 7',
+    class8: 'कक्षा 8',
+    class9: 'कक्षा 9',
+    class10: 'कक्षा 10',
+    class11: 'कक्षा 11',
+    class12: 'कक्षा 12',
     role: 'मैं हूँ...',
     student: 'छात्र',
     teacher: 'शिक्षक',
     loginButton: 'लॉगिन',
     signupText: 'कोई खाता नहीं है?',
     signupLink: 'यहाँ साइन अप करें',
-    nameRequired: 'नाम आवश्यक है',
+    usernameRequired: 'उपयोगकर्ता नाम आवश्यक है',
+    passwordRequired: 'पासवर्ड आवश्यक है',
+    classRequired: 'कृपया अपनी कक्षा चुनें',
     roleRequired: 'कृपया अपनी भूमिका चुनें'
   }
 };
 
 const mockUsers = [
-  { name: 'Alex Kumar', role: 'student' as UserRole, avatar: '👨‍🎓', points: 1250, level: 5, badges: ['first-quiz', 'science-star'] },
-  { name: 'Priya Sharma', role: 'student' as UserRole, avatar: '👩‍🎓', points: 2450, level: 8, badges: ['first-quiz', 'science-star', 'math-master'] },
-  { name: 'Teacher Priya', role: 'teacher' as UserRole, avatar: '👩‍🏫', points: 0, level: 1, badges: [] },
-  { name: 'Teacher Raj', role: 'teacher' as UserRole, avatar: '👨‍🏫', points: 0, level: 1, badges: [] }
+  { 
+    username: 'alexk',
+    password: 'student123',
+    name: 'Alex Kumar',
+    class: 8,
+    role: 'student' as UserRole, 
+    avatar: '👨‍🎓', 
+    points: 1250, 
+    level: 5, 
+    badges: ['first-quiz', 'science-star'] 
+  },
+  { 
+    username: 'priyas',
+    password: 'student123',
+    name: 'Priya Sharma',
+    class: 10,
+    role: 'student' as UserRole, 
+    avatar: '👩‍🎓', 
+    points: 2450, 
+    level: 8, 
+    badges: ['first-quiz', 'science-star', 'math-master'] 
+  },
+  { 
+    username: 'priyap',
+    password: 'teacher123',
+    name: 'Priya Patel',
+    class: 0,
+    role: 'teacher' as UserRole, 
+    avatar: '👩‍🏫', 
+    points: 0, 
+    level: 1, 
+    badges: [] 
+  },
+  { 
+    username: 'rajv',
+    password: 'teacher123',
+    name: 'Raj Verma',
+    class: 0,
+    role: 'teacher' as UserRole, 
+    avatar: '👨‍🏫', 
+    points: 0, 
+    level: 1, 
+    badges: [] 
+  }
 ];
 
 export default function LoginScreen({ onNavigate, language, setLanguage }: LoginScreenProps) {
   const { login } = useUser();
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [userClass, setUserClass] = useState<number | ''>('');
   const [role, setRole] = useState<UserRole | ''>('');
-  const [errors, setErrors] = useState<{ name?: string; role?: string }>({});
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [errors, setErrors] = useState<{ 
+    username?: string;
+    password?: string;
+    userClass?: string;
+    role?: string;
+    auth?: string;
+  }>({});
+  const [isLoading, setIsLoading] = useState(false);
   const t = translations[language];
 
   const handleLogin = () => {
-    const newErrors: { name?: string; role?: string } = {};
+    const newErrors: typeof errors = {};
     
-    if (!name.trim()) {
-      newErrors.name = t.nameRequired;
+    if (!username.trim()) {
+      newErrors.username = t.usernameRequired;
+    }
+    
+    if (!password) {
+      newErrors.password = t.passwordRequired;
     }
     
     if (!role) {
       newErrors.role = t.roleRequired;
+    } else if (role === 'student' && !userClass) {
+      newErrors.userClass = t.classRequired;
     }
     
     if (Object.keys(newErrors).length > 0) {
@@ -77,56 +157,52 @@ export default function LoginScreen({ onNavigate, language, setLanguage }: Login
       return;
     }
 
-    // Try to find existing user or create new one
-    let user = mockUsers.find(u => u.name.toLowerCase() === name.toLowerCase() && u.role === role);
+    setIsLoading(true);
     
-    if (!user) {
-      // Create new user for login
-      user = {
-        name: name.trim(),
-        role: role as UserRole,
-        avatar: role === 'student' ? '👨‍🎓' : '👩‍🏫',
-        points: role === 'student' ? 100 : 0,
-        level: 1,
-        badges: []
-      };
-    }
-
-    const fullUser: User = {
-      id: Date.now().toString(),
-      ...user
-    };
-
-    login(fullUser);
-    setShowOnboarding(true);
+    // Simulate API call
     setTimeout(() => {
-      onNavigate(fullUser.role === 'student' ? 'student-dashboard' : 'teacher-dashboard');
-    }, 2000);
-  };
+      // Find user by username and password
+      let user = mockUsers.find(u => 
+        u.username.toLowerCase() === username.trim().toLowerCase() && 
+        u.password === password &&
+        u.role === role
+      );
+      
+      if (!user) {
+        setErrors({
+          auth: language === 'en' 
+            ? 'Invalid username or password' 
+            : 'अमान्य उपयोगकर्ता नाम या पासवर्ड'
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // If student, verify class if provided
+      if (role === 'student' && userClass && user.class !== userClass) {
+        setErrors({
+          auth: language === 'en'
+            ? 'Invalid class for this user'
+            : 'इस उपयोगकर्ता के लिए अमान्य कक्षा'
+        });
+        setIsLoading(false);
+        return;
+      }
 
-  if (showOnboarding) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="text-center"
-        >
-          <div className="w-20 h-20 mx-auto bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center mb-4">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="text-3xl"
-            >
-              🚀
-            </motion.div>
-          </div>
-          <h2 className="text-2xl text-purple-600 mb-2">Welcome to STEM Quest!</h2>
-          <p className="text-gray-600">Setting up your learning adventure...</p>
-        </motion.div>
-      </div>
-    );
-  }
+      const fullUser: User = {
+        ...user,
+        id: Date.now().toString(),
+        name: user.name,
+        firstName: user.name.split(' ')[0],
+        lastName: user.name.split(' ').slice(1).join(' '),
+        class: role === 'student' ? (userClass as number) : 0
+      };
+
+      login(fullUser);
+      setIsLoading(false);
+      onNavigate(fullUser.role === 'student' ? 'student-dashboard' : 'teacher-dashboard');
+    }, 1000);
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-purple-50">
@@ -165,16 +241,15 @@ export default function LoginScreen({ onNavigate, language, setLanguage }: Login
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center mb-4">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            >
-              🧬
-            </motion.div>
+          <div className="w-24 h-24 mx-auto mb-4">
+            <img 
+              src="/images/eklavya-logo.jpg" 
+              alt="Eklavya Logo" 
+              className="w-full h-full object-contain rounded-full"
+            />
           </div>
-          <h1 className="text-3xl mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            STEM Quest
+          <h1 className="text-3xl mb-2 font-bold text-gray-800">
+            Eklavya
           </h1>
           <p className="text-gray-600">{t.subtitle}</p>
         </div>
@@ -187,20 +262,42 @@ export default function LoginScreen({ onNavigate, language, setLanguage }: Login
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">{t.name}</Label>
+              <Label htmlFor="username">{t.username}</Label>
               <Input
-                id="name"
+                id="username"
                 type="text"
-                placeholder={t.namePlaceholder}
-                value={name}
+                placeholder={t.usernamePlaceholder}
+                value={username}
                 onChange={(e) => {
-                  setName(e.target.value);
-                  if (errors.name) setErrors(prev => ({ ...prev, name: undefined }));
+                  setUsername(e.target.value);
+                  if (errors.username) setErrors(prev => ({ ...prev, username: undefined, auth: undefined }));
                 }}
-                className={errors.name ? 'border-red-500' : ''}
+                className={errors.username || errors.auth ? 'border-red-500' : ''}
               />
-              {errors.name && (
-                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+              {errors.username && (
+                <p className="text-red-500 text-sm mt-1">{errors.username}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="password">{t.password}</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder={t.passwordPlaceholder}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password) setErrors(prev => ({ ...prev, password: undefined, auth: undefined }));
+                }}
+                className={errors.password || errors.auth ? 'border-red-500' : ''}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              />
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+              )}
+              {errors.auth && (
+                <p className="text-red-500 text-sm mt-1">{errors.auth}</p>
               )}
             </div>
 
@@ -233,13 +330,53 @@ export default function LoginScreen({ onNavigate, language, setLanguage }: Login
               )}
             </div>
 
+            {role === 'student' && (
+              <div>
+                <Label htmlFor="class">{t.class}</Label>
+                <Select 
+                  value={userClass.toString()} 
+                  onValueChange={(value) => {
+                    setUserClass(parseInt(value));
+                    if (errors.userClass) setErrors(prev => ({ ...prev, userClass: undefined }));
+                  }}
+                >
+                  <SelectTrigger className={errors.userClass ? 'border-red-500' : ''}>
+                    <SelectValue placeholder={t.selectClass} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[6, 7, 8, 9, 10, 11, 12].map(grade => (
+                      <SelectItem key={grade} value={grade.toString()}>
+                        {t[`class${grade}` as keyof typeof t]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.userClass && (
+                  <p className="text-red-500 text-sm mt-1">{errors.userClass}</p>
+                )}
+              </div>
+            )}
+
             <Button
               onClick={handleLogin}
+              disabled={isLoading}
               className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white"
               size="lg"
             >
-              <LogIn className="w-4 h-4 mr-2" />
-              {t.loginButton}
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {language === 'en' ? 'Logging in...' : 'लॉगिन हो रहा है...'}
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4 mr-2" />
+                  {t.loginButton}
+                </>
+              )}
             </Button>
           </div>
 

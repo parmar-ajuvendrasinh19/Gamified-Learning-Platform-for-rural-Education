@@ -18,7 +18,7 @@ import EnhancedAnalyticsPage from './components/EnhancedAnalyticsPage';
 import { WifiOff, Wifi } from 'lucide-react';
 
 function AppContent() {
-  const { user, isAuthenticated } = useUser();
+  const { user, isAuthenticated, setUser } = useUser();
   const [currentScreen, setCurrentScreen] = useState<string>('login');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [language, setLanguage] = useState<'en' | 'hi'>('en');
@@ -26,15 +26,101 @@ function AppContent() {
   const [selectedSimulation, setSelectedSimulation] = useState<string>('');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
+  // Clear cache and reset state on refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      localStorage.removeItem('stem-quest-user');
+      setUser(null);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [setUser]);
   useEffect(() => {
     const handleOnlineStatus = () => setIsOnline(navigator.onLine);
+    
+    const handlePopState = (event: PopStateEvent) => {
+      // Get the target screen from the URL or default to login
+      const path = window.location.pathname.substring(1) || 'login';
+      
+      // If we have state in the history, use it
+      if (event.state?.screen) {
+        setCurrentScreen(event.state.screen);
+        if (event.state.data?.lesson) setSelectedLesson(event.state.data.lesson);
+        if (event.state.data?.simulation) setSelectedSimulation(event.state.data.simulation);
+      } 
+      // If no state but we have a path, use that
+      else if (path) {
+        // Map the path to a valid screen
+        const validScreens = [
+          'login', 'signup', 'student-dashboard', 'teacher-dashboard', 
+          'quiz', 'badges', 'leaderboard', 'profile', 'analytics', 'simulations'
+        ];
+        
+        // If it's a valid screen, use it, otherwise default to dashboard based on role
+        if (validScreens.includes(path)) {
+          setCurrentScreen(path);
+        } else {
+          const defaultScreen = user?.role === 'student' ? 'student-dashboard' : 'teacher-dashboard';
+          setCurrentScreen(defaultScreen);
+          window.history.replaceState(
+            { screen: defaultScreen },
+            '',
+            `/${defaultScreen}`
+          );
+        }
+      }
+    };
+
+    // Initialize history state if it doesn't exist
+    if (window.history.state === null || !window.history.state.screen) {
+      const initialScreen = window.location.pathname.substring(1) || 'login';
+      const validInitialScreen = [
+        'login', 'signup', 'student-dashboard', 'teacher-dashboard', 
+        'quiz', 'badges', 'leaderboard', 'profile', 'analytics'
+      ].includes(initialScreen) && isAuthenticated ? initialScreen : 'login';
+      
+      window.history.replaceState(
+        { screen: validInitialScreen },
+        '',
+        `/${validInitialScreen}`
+      );
+      setCurrentScreen(validInitialScreen);
+    } else {
+      // If we already have a valid state, use it
+      const { screen, data } = window.history.state;
+      const validScreen = [
+        'login', 'signup', 'student-dashboard', 'teacher-dashboard', 
+        'quiz', 'badges', 'leaderboard', 'profile', 'analytics'
+      ].includes(screen) ? screen : (user?.role === 'student' ? 'student-dashboard' : 'teacher-dashboard');
+      
+      setCurrentScreen(validScreen);
+      if (data?.lesson) setSelectedLesson(data.lesson);
+      if (data?.simulation) setSelectedSimulation(data.simulation);
+      
+      // Ensure URL matches the valid screen
+      if (screen !== validScreen) {
+        window.history.replaceState(
+          { screen: validScreen, data },
+          '',
+          `/${validScreen}`
+        );
+      }
+    }
+    
+    // Add event listeners
     window.addEventListener('online', handleOnlineStatus);
     window.addEventListener('offline', handleOnlineStatus);
+    window.addEventListener('popstate', handlePopState);
+    
     return () => {
       window.removeEventListener('online', handleOnlineStatus);
       window.removeEventListener('offline', handleOnlineStatus);
+      window.removeEventListener('popstate', handlePopState);
     };
-  }, []);
+  }, [user?.role]); // Only re-run if user role changes
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
@@ -42,13 +128,41 @@ function AppContent() {
   };
 
   const navigateToScreen = (screen: string, data?: any) => {
-    if (data?.lesson) setSelectedLesson(data.lesson);
-    if (data?.simulation) setSelectedSimulation(data.simulation);
-    setCurrentScreen(screen);
+    // Validate the screen
+    const validScreens = [
+      'login', 'signup', 'student-dashboard', 'teacher-dashboard', 
+      'quiz', 'badges', 'leaderboard', 'profile', 'analytics', 'simulations'
+    ];
+
+    // If screen is not valid, default based on user role
+    const targetScreen = validScreens.includes(screen) 
+      ? screen 
+      : (user?.role === 'student' ? 'student-dashboard' : 'teacher-dashboard');
+
+    // Only proceed if we're actually changing screens or data
+    if (targetScreen !== currentScreen || (data && (data.lesson || data.simulation))) {
+      // Update state first
+      setCurrentScreen(targetScreen);
+      if (data?.lesson) setSelectedLesson(data.lesson);
+      if (data?.simulation) setSelectedSimulation(data.simulation);
+      
+      // Update the URL and push to history
+      const newUrl = `/${targetScreen}`;
+      const state = { screen: targetScreen, data };
+      
+      // Always use pushState for navigation to maintain proper history
+      window.history.pushState(state, '', newUrl);
+    }
   };
 
   const renderScreen = () => {
-    const screenProps = { user, navigateToScreen, language };
+    // Create screen props without the key
+    const screenProps = { user, navigateToScreen, language, setLanguage };
+    
+    // Helper function to create screen components with proper typing
+    const createScreen = (Component: React.ComponentType<any>, props: any) => {
+      return <Component {...props} />;
+    };
 
     // Authentication screens
     if (!isAuthenticated) {
@@ -70,25 +184,29 @@ function AppContent() {
     // Main app screens
     switch (currentScreen) {
       case 'student-dashboard':
-        return <StudentDashboard {...screenProps} />;
+        return createScreen(StudentDashboard, { ...screenProps });
       case 'teacher-dashboard':
-        return <TeacherDashboard {...screenProps} />;
-      case 'lessons':
-        return <LessonList {...screenProps} setLanguage={setLanguage} />;
+        return createScreen(TeacherDashboard, { ...screenProps });
       case 'quiz':
-        return <QuizScreen {...screenProps} lesson={selectedLesson} />;
+        return createScreen(QuizScreen, { ...screenProps, lesson: selectedLesson });
       case 'simulations':
-        return <STEMSimulations {...screenProps} simulation={selectedSimulation} />;
+        return createScreen(STEMSimulations, { ...screenProps, simulation: selectedSimulation });
       case 'leaderboard':
-        return <Leaderboard {...screenProps} />;
+        return createScreen(Leaderboard, { ...screenProps });
       case 'badges':
-        return <BadgeCollection {...screenProps} />;
+        return createScreen(BadgeCollection, { ...screenProps });
       case 'profile':
-        return <ProfileScreen {...screenProps} />;
+        return createScreen(ProfileScreen, { ...screenProps });
       case 'analytics':
-        return <EnhancedAnalyticsPage {...screenProps} />;
+        return createScreen(EnhancedAnalyticsPage, { ...screenProps });
       default:
-        return user?.role === 'student' ? <StudentDashboard {...screenProps} /> : <TeacherDashboard {...screenProps} />;
+        // If we somehow got to an invalid screen, redirect to the appropriate dashboard
+        const defaultScreen = user?.role === 'student' ? 'student-dashboard' : 'teacher-dashboard';
+        // Use setTimeout to avoid state updates during render
+        setTimeout(() => navigateToScreen(defaultScreen), 0);
+        return user?.role === 'student'
+          ? createScreen(StudentDashboard, { ...screenProps })
+          : createScreen(TeacherDashboard, { ...screenProps });
     }
   };
 
@@ -113,15 +231,17 @@ function AppContent() {
         </motion.div>
       )}
       
-      <motion.div
-        key={currentScreen}
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
-        className={`h-screen ${!isOnline ? 'pt-10' : ''}`}
-      >
-        {renderScreen()}
-      </motion.div>
+      <div className={`h-screen ${!isOnline ? 'pt-10' : ''}`}>
+        <motion.div
+          key={currentScreen}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
+          className="h-full"
+        >
+          {renderScreen()}
+        </motion.div>
+      </div>
     </div>
   );
 }
