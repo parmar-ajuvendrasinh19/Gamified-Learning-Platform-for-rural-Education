@@ -14,7 +14,7 @@ const slides = {
     {
       icon: '🎮',
       title: 'Learn Through Gaming',
-      description: 'Turn complex STEM concepts into fun, interactive games and simulations.',
+      description: 'Turn complex Eklavya concepts into fun, interactive games and simulations.',
       color: 'from-blue-500 to-cyan-500'
     },
     {
@@ -34,7 +34,7 @@ const slides = {
     {
       icon: '🎮',
       title: 'गेमिंग के माध्यम से सीखें',
-      description: 'जटिल STEM अवधारणाओं को मजेदार, इंटरैक्टिव गेम और सिमुलेशन में बदलें।',
+      description: 'जटिल Eklavya अवधारणाओं को मजेदार, इंटरैक्टिव गेम और सिमुलेशन में बदलें।',
       color: 'from-blue-500 to-cyan-500'
     },
     {

@@ -30,7 +30,7 @@ const translations = {
     quickActions: 'Quick Actions',
     continueLearning: 'Continue Learning',
     practiceMode: 'Practice Mode',
-    simulations: 'STEM Simulations'
+    simulations: 'Eklavya Simulations'
   },
   hi: {
     welcome: 'वापसी पर स्वागत',
@@ -47,7 +47,7 @@ const translations = {
     quickActions: 'त्वरित कार्य',
     continueLearning: 'सीखना जारी रखें',
     practiceMode: 'अभ्यास मोड',
-    simulations: 'STEM सिमुलेशन'
+    simulations: 'Eklavya सिमुलेशन'
   }
 };
 

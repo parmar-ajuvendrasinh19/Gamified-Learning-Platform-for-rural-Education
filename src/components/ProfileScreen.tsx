@@ -27,6 +27,7 @@ const translations = {
     personalInfo: 'Personal Information',
     name: 'Name',
     role: 'Role',
+    class: 'Class',
     level: 'Level',
     totalPoints: 'Total Points',
     badges: 'Badges Earned',
@@ -61,6 +62,7 @@ const translations = {
     personalInfo: 'व्यक्तिगत जानकारी',
     name: 'नाम',
     role: 'भूमिका',
+    class: 'कक्षा',
     level: 'स्तर',
     totalPoints: 'कुल अंक',
     badges: 'अर्जित बैज',
@@ -264,6 +266,10 @@ export default function ProfileScreen({ user: propUser, navigateToScreen, langua
               </div>
               {user.role === 'student' && (
                 <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{t.class}:</span>
+                    <span>Class {user.class}</span>
+                  </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">{t.level}:</span>
                     <span>{user.level}</span>

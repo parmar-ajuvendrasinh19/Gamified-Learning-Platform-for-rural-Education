@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 import BottomNavigation from './BottomNavigation';
 import { User } from './types';
-import { ChevronLeft, Play, Pause, RotateCcw, Wifi, Zap, Target } from 'lucide-react';
+import { ChevronLeft, Play, Pause, RotateCcw, Wifi, Zap, Target, Atom, Plus, Minus } from 'lucide-react';
 
 interface STEMSimulationsProps {
   user: User | null;
@@ -20,6 +20,7 @@ const translations = {
     wifiTitle: 'Wi-Fi Signal Propagation',
     projectileTitle: 'Projectile Motion',
     circuitTitle: 'Electric Circuit',
+    atomTitle: 'Atom Builder',
     play: 'Play',
     pause: 'Pause',
     reset: 'Reset',
@@ -27,6 +28,12 @@ const translations = {
     velocity: 'Initial Velocity',
     frequency: 'Signal Frequency',
     voltage: 'Voltage',
+    addOrbit: 'Add Orbit',
+    removeOrbit: 'Remove Orbit',
+    addElectron: 'Add Electron',
+    removeElectron: 'Remove Electron',
+    orbits: 'Orbits',
+    electrons: 'Electrons',
     switchOn: 'Switch ON',
     switchOff: 'Switch OFF',
     distance: 'Distance',
@@ -36,6 +43,7 @@ const translations = {
     wifiInstructions: 'Adjust the frequency to see how Wi-Fi signals spread from the router.',
     projectileInstructions: 'Change the angle and velocity to see different trajectory paths.',
     circuitInstructions: 'Toggle the switch to control current flow in the circuit.',
+    atomInstructions: 'Build and customize atoms by adding/removing orbits and electrons.',
     meters: 'm',
     seconds: 's',
     degrees: '°',
@@ -48,6 +56,7 @@ const translations = {
     wifiTitle: 'वाई-फाई सिग्नल प्रसार',
     projectileTitle: 'प्रक्षेप्य गति',
     circuitTitle: 'विद्युत सर्किट',
+    atomTitle: 'परमाणु निर्माता',
     play: 'चलाएं',
     pause: 'रुकें',
     reset: 'रीसेट',
@@ -55,6 +64,12 @@ const translations = {
     velocity: 'प्रारंभिक वेग',
     frequency: 'सिग्नल आवृत्ति',
     voltage: 'वोल्टेज',
+    addOrbit: 'कक्षा जोड़ें',
+    removeOrbit: 'कक्षा हटाएं',
+    addElectron: 'इलेक्ट्रॉन जोड़ें',
+    removeElectron: 'इलेक्ट्रॉन हटाएं',
+    orbits: 'कक्षाएं',
+    electrons: 'इलेक्ट्रॉन',
     switchOn: 'स्विच चालू',
     switchOff: 'स्विच बंद',
     distance: 'दूरी',
@@ -64,6 +79,7 @@ const translations = {
     wifiInstructions: 'देखें कि राउटर से वाई-फाई सिग्नल कैसे फैलते हैं।',
     projectileInstructions: 'कोण और वेग बदलकर अलग पथ देखें।',
     circuitInstructions: 'सर्किट में धारा नियंत्रित करने के लिए स्विच टॉगल करें।',
+    atomInstructions: 'कक्षाओं और इलेक्ट्रॉनों को जोड़कर/हटाकर परमाणु बनाएं और अनुकूलित करें।',
     meters: 'मी',
     seconds: 'से',
     degrees: '°',
@@ -94,7 +110,14 @@ const simulationTypes = [
     icon: Zap,
     color: 'from-orange-500 to-red-500',
     instructionsKey: 'circuitInstructions'
-  }
+  },
+  {
+    id: 'atom',
+    titleKey: 'atomTitle',
+    icon: Atom,
+    color: 'from-purple-500 to-pink-500',
+    instructionsKey: 'atomInstructions'
+  },
 ];
 
 export default function STEMSimulations({ user, navigateToScreen, language, simulation }: STEMSimulationsProps) {
@@ -103,7 +126,16 @@ export default function STEMSimulations({ user, navigateToScreen, language, simu
   
   // WiFi Simulation State
   const [wifiFrequency, setWifiFrequency] = useState([2.4]);
-  const [wifiWaves, setWifiWaves] = useState<Array<{id: number, radius: number, opacity: number}>>([]);
+  const [wifiStrength, setWifiStrength] = useState([50]);
+  const [wifiChannels, setWifiChannels] = useState([6]);
+  const [wifiWaves, setWifiWaves] = useState<Array<{id: number, radius: number, opacity: number, type: 'data' | 'ack' | 'beacon', data?: string, x: number, y: number, angle: number, speed: number, targetX: number, targetY: number, lifetime: number}>>([]);
+  const [devices, setDevices] = useState([
+    { id: 1, x: 100, y: 150, connected: true, signalStrength: 0, lastSeen: 0 },
+    { id: 2, x: 200, y: 200, connected: false, signalStrength: 0, lastSeen: 0 },
+    { id: 3, x: 300, y: 100, connected: false, signalStrength: 0, lastSeen: 0 }
+  ]);
+  const [networkTraffic, setNetworkTraffic] = useState<Array<{type: 'data' | 'ack', from: number, to: number, size: number, progress: number}>>([]);
+  const [selectedDevice, setSelectedDevice] = useState<number | null>(null);
   
   // Projectile Simulation State
   const [angle, setAngle] = useState([45]);
@@ -115,6 +147,11 @@ export default function STEMSimulations({ user, navigateToScreen, language, simu
   const [voltage, setVoltage] = useState([12]);
   const [switchOn, setSwitchOn] = useState(false);
   const [currentFlow, setCurrentFlow] = useState(0);
+  
+  // Atom Simulation State
+  const [orbits, setOrbits] = useState(1);
+  const [electrons, setElectrons] = useState([2]); // Electrons per orbit
+  const [electronAngles, setElectronAngles] = useState<number[][]>([[0, 0]]); // Angles for each electron in each orbit
 
   const t = translations[language];
 
@@ -123,25 +160,135 @@ export default function STEMSimulations({ user, navigateToScreen, language, simu
     
     if (isPlaying && selectedSim === 'wifi') {
       interval = setInterval(() => {
+        const now = Date.now();
+        
+        // Update existing waves
         setWifiWaves(prev => {
-          const newWaves = prev
-            .map(wave => ({
-              ...wave,
-              radius: wave.radius + 2,
-              opacity: Math.max(0, wave.opacity - 0.02)
-            }))
-            .filter(wave => wave.opacity > 0);
-          
-          if (Math.random() > 0.7) {
-            newWaves.push({
-              id: Date.now(),
-              radius: 0,
-              opacity: 1
-            });
-          }
-          
-          return newWaves;
+          return prev
+            .map(wave => {
+              const newRadius = wave.radius + wave.speed;
+              const progress = Math.min(1, newRadius / 200);
+              const newX = wave.x + Math.cos(wave.angle) * wave.speed;
+              const newY = wave.y + Math.sin(wave.angle) * wave.speed;
+              
+              // Check if wave reached its target
+              if (wave.type === 'data' || wave.type === 'ack') {
+                const distanceToTarget = Math.sqrt(
+                  Math.pow(wave.targetX - newX, 2) + 
+                  Math.pow(wave.targetY - newY, 2)
+                );
+                
+                if (distanceToTarget < 20) {
+                  // Wave reached its target
+                  if (wave.type === 'data') {
+                    // Send ACK back
+                    setTimeout(() => {
+                      const targetDevice = devices.find(d => d.id === (wave as any).from);
+                      if (targetDevice) {
+                        setWifiWaves(prev => [...prev, {
+                          id: Date.now() + Math.random(),
+                          type: 'ack',
+                          x: wave.targetX,
+                          y: wave.targetY,
+                          targetX: targetDevice.x,
+                          targetY: targetDevice.y,
+                          angle: Math.atan2(
+                            targetDevice.y - wave.targetY,
+                            targetDevice.x - wave.targetX
+                          ),
+                          speed: 3,
+                          radius: 0,
+                          opacity: 1,
+                          lifetime: 1000
+                        }]);
+                      }
+                    }, 100);
+                  }
+                  return null;
+                }
+              }
+              
+              return {
+                ...wave,
+                radius: newRadius,
+                x: newX,
+                y: newY,
+                opacity: Math.max(0, 1 - (now - wave.lifetime * 1000) / 2000),
+                lifetime: wave.lifetime - 0.05
+              };
+            })
+            .filter(wave => wave !== null && wave.opacity > 0) as any;
         });
+        
+        // Generate new waves
+        if (Math.random() > 0.95) {
+          // Randomly select a device to send data
+          const connectedDevices = devices.filter(d => d.connected);
+          if (connectedDevices.length > 0) {
+            const fromDevice = connectedDevices[Math.floor(Math.random() * connectedDevices.length)];
+            const toDevice = devices[Math.floor(Math.random() * devices.length)];
+            
+            if (fromDevice.id !== toDevice.id) {
+              const angle = Math.atan2(
+                toDevice.y - fromDevice.y,
+                toDevice.x - fromDevice.x
+              );
+              
+              setWifiWaves(prev => [...prev, {
+                id: Date.now() + Math.random(),
+                type: 'data',
+                data: `Packet ${Math.floor(Math.random() * 1000)}`,
+                x: fromDevice.x,
+                y: fromDevice.y,
+                targetX: toDevice.x,
+                targetY: toDevice.y,
+                angle,
+                speed: 2,
+                radius: 0,
+                opacity: 1,
+                from: fromDevice.id,
+                to: toDevice.id,
+                lifetime: 1000
+              }]);
+              
+              // Update network traffic
+              setNetworkTraffic(prev => [...prev, {
+                type: 'data',
+                from: fromDevice.id,
+                to: toDevice.id,
+                size: Math.floor(Math.random() * 1000) + 500,
+                progress: 0
+              }]);
+            }
+          }
+        }
+        
+        // Update network traffic progress
+        setNetworkTraffic(prev => 
+          prev
+            .map(traffic => ({
+              ...traffic,
+              progress: Math.min(1, traffic.progress + 0.02)
+            }))
+            .filter(traffic => traffic.progress < 1.5)
+        );
+        
+        // Update device signal strengths
+        setDevices(prev => 
+          prev.map(device => {
+            // Calculate distance to router (center at 80,150)
+            const distance = Math.sqrt(Math.pow(80 - device.x, 2) + Math.pow(150 - device.y, 2));
+            // Signal strength decreases with distance and interference
+            const strength = Math.max(0, 100 - distance / 2);
+            
+            return {
+              ...device,
+              signalStrength: strength,
+              connected: strength > 30, // Simple threshold for connection
+              lastSeen: device.connected ? now : device.lastSeen
+            };
+          })
+        );
       }, 50);
     }
     
@@ -170,6 +317,14 @@ export default function STEMSimulations({ user, navigateToScreen, language, simu
       interval = setInterval(() => {
         setCurrentFlow(prev => switchOn ? (prev + 1) % 100 : 0);
       }, 100);
+    } else if (isPlaying && selectedSim === 'atom') {
+      interval = setInterval(() => {
+        setElectronAngles(prev => 
+          prev.map((orbit, i) => 
+            orbit.map(angle => (angle + 1) % 360)
+          )
+        );
+      }, 50);
     }
 
     return () => clearInterval(interval);
@@ -181,48 +336,207 @@ export default function STEMSimulations({ user, navigateToScreen, language, simu
     setProjectilePosition({ x: 0, y: 0 });
     setTrajectory([]);
     setCurrentFlow(0);
+    setOrbits(1);
+    setElectrons([2]);
+    setElectronAngles([[0, 0]]);
   };
 
-  const renderWiFiSimulation = () => (
-    <div className="relative w-full h-64 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl overflow-hidden border-2 border-blue-200">
-      {/* Router */}
-      <div className="absolute top-1/2 left-8 transform -translate-y-1/2 w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-        <Wifi className="w-5 h-5 text-white" />
+  const renderWiFiSimulation = () => {
+    const routerX = 80;
+    const routerY = 150;
+    
+    return (
+      <div className="relative w-full h-96 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl overflow-hidden border-2 border-blue-200">
+        {/* Router */}
+        <div 
+          className={`absolute w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer transition-all ${selectedDevice === 0 ? 'ring-4 ring-blue-400 scale-110' : ''}`}
+          style={{ left: `${routerX}px`, top: `${routerY}px`, transform: 'translate(-50%, -50%)' }}
+          onClick={() => setSelectedDevice(0)}
+        >
+          <Wifi className="w-6 h-6 text-white" />
+          <div className="absolute -bottom-6 text-xs font-medium text-center w-20">Router</div>
+        </div>
+        
+        {/* Connected Devices */}
+        {devices.map((device, index) => {
+          const isSelected = selectedDevice === device.id;
+          const deviceIndex = index + 1;
+          
+          return (
+            <div 
+              key={device.id}
+              className={`absolute w-8 h-8 ${device.connected ? 'bg-green-500' : 'bg-gray-400'} rounded-full flex items-center justify-center cursor-pointer transition-all ${isSelected ? 'ring-4 ring-blue-400 scale-125' : ''}`}
+              style={{ 
+                left: `${device.x}px`, 
+                top: `${device.y}px`,
+                transform: `translate(-50%, -50%) ${isSelected ? 'scale(1.25)' : ''}`
+              }}
+              onClick={() => setSelectedDevice(device.id)}
+            >
+              <div className="text-white text-xs font-bold">{deviceIndex}</div>
+              <div className="absolute -bottom-6 text-xs font-medium text-center w-20">
+                Device {deviceIndex}
+                <div className="text-xs text-gray-600">{device.signalStrength.toFixed(0)}%</div>
+              </div>
+              
+              {/* Signal strength indicator */}
+              {device.connected && (
+                <div 
+                  className="absolute rounded-full bg-blue-200 opacity-20"
+                  style={{
+                    width: `${device.signalStrength * 2}px`,
+                    height: `${device.signalStrength * 2}px`,
+                    marginLeft: `-${device.signalStrength}px`,
+                    marginTop: `-${device.signalStrength}px`,
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
+        
+        {/* WiFi Waves */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none">
+          {wifiWaves.map((wave, index) => {
+            const isData = wave.type === 'data';
+            const isAck = wave.type === 'ack';
+            
+            return (
+              <circle
+                key={`${wave.id}-${index}`}
+                cx={wave.x}
+                cy={wave.y}
+                r={wave.radius}
+                fill="none"
+                stroke={isData ? '#3B82F6' : isAck ? '#10B981' : '#8B5CF6'}
+                strokeWidth={isData ? 2 : isAck ? 1.5 : 1}
+                strokeDasharray={isData ? 'none' : '4,4'}
+                opacity={wave.opacity}
+              />
+            );
+          })}
+          
+          {/* Connection lines */}
+          {devices.filter(d => d.connected).map(device => (
+            <line
+              key={`line-${device.id}`}
+              x1={routerX}
+              y1={routerY}
+              x2={device.x}
+              y2={device.y}
+              stroke="#93C5FD"
+              strokeWidth="1"
+              strokeDasharray="5,5"
+              opacity={0.5}
+            />
+          ))}
+        </svg>
+        
+        {/* Network Traffic Panel */}
+        <div className="absolute bottom-4 left-4 right-4 bg-white/90 p-3 rounded-lg shadow-md">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-medium">Network Traffic</h3>
+            <div className="text-xs text-gray-600">
+              {devices.filter(d => d.connected).length} devices connected
+            </div>
+          </div>
+          
+          <div className="space-y-2 max-h-24 overflow-y-auto pr-2">
+            {networkTraffic.length > 0 ? (
+              networkTraffic.map((traffic, i) => (
+                <div key={i} className="text-xs bg-blue-50 p-2 rounded">
+                  <div className="flex justify-between">
+                    <span>Device {traffic.from} → Device {traffic.to}</span>
+                    <span>{Math.round(traffic.size * traffic.progress)}/{traffic.size} KB</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                    <div 
+                      className="bg-blue-600 h-1.5 rounded-full" 
+                      style={{ width: `${Math.min(100, traffic.progress * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-gray-500 text-sm py-2">
+                {isPlaying ? 'Monitoring network traffic...' : 'Click Play to start simulation'}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Controls */}
+        <div className="absolute top-4 right-4 bg-white/90 p-3 rounded-lg shadow-md w-48">
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium mb-1">{t.frequency}: {wifiFrequency[0]} {t.hertz}</label>
+              <Slider
+                value={wifiFrequency}
+                onValueChange={setWifiFrequency}
+                min={2.4}
+                max={5.0}
+                step={0.1}
+                className="w-full"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-medium mb-1">Signal Strength: {wifiStrength[0]}%</label>
+              <Slider
+                value={wifiStrength}
+                onValueChange={setWifiStrength}
+                min={10}
+                max={100}
+                step={1}
+                className="w-full"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-medium mb-1">Channel: {wifiChannels[0]}</label>
+              <Slider
+                value={wifiChannels}
+                onValueChange={setWifiChannels}
+                min={1}
+                max={11}
+                step={1}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Selected Device Info */}
+        {selectedDevice !== null && (
+          <div className="absolute top-4 left-4 bg-white/90 p-3 rounded-lg shadow-md w-48">
+            <h3 className="font-medium mb-2">
+              {selectedDevice === 0 ? 'Router' : `Device ${selectedDevice}`}
+            </h3>
+            
+            {selectedDevice === 0 ? (
+              <div className="space-y-1 text-sm">
+                <div>Status: <span className="text-green-600">Online</span></div>
+                <div>Frequency: {wifiFrequency[0]} GHz</div>
+                <div>Channel: {wifiChannels[0]}</div>
+                <div>Devices: {devices.filter(d => d.connected).length} connected</div>
+              </div>
+            ) : (
+              <div className="space-y-1 text-sm">
+                <div>Status: 
+                  <span className={devices[selectedDevice - 1]?.connected ? 'text-green-600' : 'text-red-600'}>
+                    {devices[selectedDevice - 1]?.connected ? 'Connected' : 'Disconnected'}
+                  </span>
+                </div>
+                <div>Signal: {devices[selectedDevice - 1]?.signalStrength.toFixed(0)}%</div>
+                <div>IP: 192.168.1.{selectedDevice}</div>
+                <div>MAC: 00:1A:2B:3C:{selectedDevice}1:2{selectedDevice}</div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-      
-      {/* Device */}
-      <div className="absolute top-1/2 right-8 transform -translate-y-1/2 w-6 h-6 bg-gray-600 rounded" />
-      
-      {/* WiFi Waves */}
-      {wifiWaves.map(wave => (
-        <motion.div
-          key={wave.id}
-          className="absolute top-1/2 left-8 transform -translate-y-1/2 border-2 border-blue-400 rounded-full"
-          style={{
-            width: wave.radius * 2,
-            height: wave.radius * 2,
-            marginLeft: -wave.radius,
-            marginTop: -wave.radius,
-            opacity: wave.opacity,
-            borderColor: `rgba(59, 130, 246, ${wave.opacity})`
-          }}
-        />
-      ))}
-      
-      {/* Controls */}
-      <div className="absolute bottom-4 left-4 right-4 bg-white/90 p-3 rounded-lg">
-        <label className="block text-sm mb-2">{t.frequency}: {wifiFrequency[0]} {t.hertz}</label>
-        <Slider
-          value={wifiFrequency}
-          onValueChange={setWifiFrequency}
-          min={2.4}
-          max={5.0}
-          step={0.1}
-          className="w-full"
-        />
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderProjectileSimulation = () => (
     <div className="relative w-full h-64 bg-gradient-to-b from-sky-200 to-green-200 rounded-xl overflow-hidden border-2 border-green-200">
@@ -265,6 +579,161 @@ export default function STEMSimulations({ user, navigateToScreen, language, simu
       </div>
     </div>
   );
+
+  const renderAtomSimulation = () => {
+    const centerX = 150;
+    const centerY = 120;
+    const maxOrbits = 4;
+    const orbitRadius = 30;
+    
+    const addOrbit = () => {
+      if (orbits < maxOrbits) {
+        setOrbits(prev => prev + 1);
+        setElectrons(prev => [...prev, 0]);
+        setElectronAngles(prev => [...prev, []]);
+      }
+    };
+
+    const removeOrbit = () => {
+      if (orbits > 1) {
+        setOrbits(prev => prev - 1);
+        setElectrons(prev => prev.slice(0, -1));
+        setElectronAngles(prev => prev.slice(0, -1));
+      }
+    };
+
+    const addElectron = (orbitIndex: number) => {
+      if (electrons[orbitIndex] < (orbitIndex + 1) * 2) {
+        const newElectrons = [...electrons];
+        newElectrons[orbitIndex] += 1;
+        setElectrons(newElectrons);
+        
+        const newAngles = [...electronAngles];
+        newAngles[orbitIndex] = [...newAngles[orbitIndex], 0];
+        setElectronAngles(newAngles);
+      }
+    };
+
+    const removeElectron = (orbitIndex: number) => {
+      if (electrons[orbitIndex] > 0) {
+        const newElectrons = [...electrons];
+        newElectrons[orbitIndex] -= 1;
+        setElectrons(newElectrons);
+        
+        const newAngles = [...electronAngles];
+        newAngles[orbitIndex] = newAngles[orbitIndex].slice(0, -1);
+        setElectronAngles(newAngles);
+      }
+    };
+
+    return (
+      <div className="relative w-full h-64 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl overflow-hidden border-2 border-purple-200">
+        <svg className="w-full h-full">
+          {/* Nucleus */}
+          <circle 
+            cx={centerX} 
+            cy={centerY} 
+            r={15} 
+            fill="#4F46E5" 
+            className="animate-pulse"
+          />
+          
+          {/* Orbit Paths */}
+          {Array.from({ length: orbits }).map((_, i) => {
+            const radius = orbitRadius * (i + 1);
+            return (
+              <circle
+                key={`orbit-${i}`}
+                cx={centerX}
+                cy={centerY}
+                r={radius}
+                fill="none"
+                stroke="#A78BFA"
+                strokeWidth="1"
+                strokeDasharray="5,5"
+              />
+            );
+          })}
+          
+          {/* Electrons */}
+          {electronAngles.map((orbit, orbitIndex) => {
+            const radius = orbitRadius * (orbitIndex + 1);
+            return orbit.map((angle, electronIndex) => {
+              const radian = (angle * Math.PI) / 180;
+              const x = centerX + radius * Math.cos(radian);
+              const y = centerY + radius * Math.sin(radian);
+              
+              return (
+                <circle
+                  key={`electron-${orbitIndex}-${electronIndex}`}
+                  cx={x}
+                  cy={y}
+                  r={5}
+                  fill="#F59E0B"
+                  className="drop-shadow-sm"
+                />
+              );
+            });
+          })}
+        </svg>
+        
+        {/* Controls */}
+        <div className="absolute bottom-4 left-4 right-4 bg-white/90 p-3 rounded-lg flex justify-between items-center">
+          <div className="flex-1 mr-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium">{t.orbits}: {orbits}</span>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={removeOrbit}
+                  disabled={orbits <= 1}
+                  className="h-8 w-8 p-0"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={addOrbit}
+                  disabled={orbits >= maxOrbits}
+                  className="h-8 w-8 p-0"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            {Array.from({ length: orbits }).map((_, i) => (
+              <div key={`electron-control-${i}`} className="flex justify-between items-center mb-1">
+                <span className="text-xs">{t.electrons} {i + 1}: {electrons[i] || 0}</span>
+                <div className="flex space-x-1">
+                  <Button 
+                    variant="ghost" 
+                    size="xs" 
+                    onClick={() => removeElectron(i)}
+                    disabled={!electrons[i]}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="xs" 
+                    onClick={() => addElectron(i)}
+                    disabled={electrons[i] >= (i + 1) * 2}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderCircuitSimulation = () => (
     <div className="relative w-full h-64 bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-300 p-4">
@@ -396,6 +865,7 @@ export default function STEMSimulations({ user, navigateToScreen, language, simu
               {selectedSim === 'wifi' && renderWiFiSimulation()}
               {selectedSim === 'projectile' && renderProjectileSimulation()}
               {selectedSim === 'circuit' && renderCircuitSimulation()}
+              {selectedSim === 'atom' && renderAtomSimulation()}
             </motion.div>
           </AnimatePresence>
         </Card>

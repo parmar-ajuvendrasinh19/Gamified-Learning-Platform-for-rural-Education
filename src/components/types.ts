@@ -3,6 +3,9 @@ export type UserRole = 'student' | 'teacher';
 export interface User {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
+  class: number;
   role: UserRole;
   avatar: string;
   points: number;

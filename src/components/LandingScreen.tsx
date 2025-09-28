@@ -13,19 +13,19 @@ interface LandingScreenProps {
 
 const translations = {
   en: {
-    title: "STEM Quest",
+    title: "Eklavya",
     subtitle: "Learn Science, Technology, Engineering & Math through Games",
     studentRole: "I'm a Student",
     teacherRole: "I'm a Teacher",
-    studentDesc: "Play games, earn badges, and master STEM concepts",
+    studentDesc: "Play games, earn badges, and master Eklavya concepts",
     teacherDesc: "Track progress and assign interactive lessons"
   },
   hi: {
-    title: "स्टेम क्वेस्ट",
+    title: "एकलव्य",
     subtitle: "खेल के माध्यम से विज्ञान, तकनीक, इंजीनियरिंग और गणित सीखें",
     studentRole: "मैं छात्र हूँ",
     teacherRole: "मैं शिक्षक हूँ",
-    studentDesc: "खेल खेलें, बैज अर्जित करें, और STEM अवधारणाओं में महारत हासिल करें",
+    studentDesc: "खेल खेलें, बैज अर्जित करें, और Eklavya अवधारणाओं में महारत हासिल करें",
     teacherDesc: "प्रगति ट्रैक करें और इंटरैक्टिव पाठ असाइन करें"
   }
 };
